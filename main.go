@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jackbister/addon-manager/metadata"
+	"github.com/jackbister/wow-addon-manager/metadata"
 	"github.com/pkg/errors"
 )
 
