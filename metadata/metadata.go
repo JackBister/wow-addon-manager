@@ -22,6 +22,16 @@ type DownloadMetadata struct {
 	Url  string `json:"url"`
 }
 
+func (metadata *AddonMetaData) Validate() error {
+	if metadata.Download == nil {
+		return errors.New("The download URL is missing from the returned metadata")
+	}
+	if metadata.Game != "wow" {
+		return errors.New("The addon is not associated with WoW")
+	}
+	return nil
+}
+
 func Fetch(addonName string) (*http.Response, error) {
 	resp, err := http.Get("https://api.cfwidget.com/wow/addons/" + addonName)
 
@@ -46,14 +56,4 @@ func Decode(r io.Reader) AddonMetaData {
 	decoder.Decode(&metadata)
 
 	return metadata
-}
-
-func Validate(metadata AddonMetaData) error {
-	if metadata.Download == nil {
-		return errors.New("The download URL is missing from the returned metadata")
-	}
-	if metadata.Game != "wow" {
-		return errors.New("The addon is not associated with WoW")
-	}
-	return nil
 }

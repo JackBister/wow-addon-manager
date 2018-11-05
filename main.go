@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
 
+	"github.com/jackbister/wow-addon-manager/addon"
 	"github.com/jackbister/wow-addon-manager/metadata"
+	"github.com/jackbister/wow-addon-manager/versionfile"
 	"github.com/pkg/errors"
 )
 
@@ -21,15 +22,14 @@ type AddonsJSON struct {
 	WowFolder string   `json:"wowFolder"`
 }
 
-type LockFile struct {
-	Versions map[string]int `json:"versions"`
-}
-
 var gAddonsJSON AddonsJSON
-var gLockFile = LockFile{Versions: make(map[string]int)}
 
 func main() {
-	readLockFile()
+	lockFile, err := versionfile.FromFile("addons.lock.json")
+	if err != nil {
+		fmt.Println(err.Error())
+		lockFile = versionfile.New()
+	}
 
 	file, err := os.Open("addons.json")
 	if err != nil {
@@ -44,47 +44,47 @@ func main() {
 	}
 
 	for _, v := range gAddonsJSON.Addons {
-		err = downloadAddon(v)
+		err = downloadAddon(v, lockFile.GetVersion, lockFile.PutVersion)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
 	}
 
-	err = writeLockFile()
+	err = lockFile.ToFile("addons.lock.json")
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 }
 
-func downloadAddon(addonName string) error {
+func downloadAddon(addonName string, getVersion func(name string) int, putVersion func(name string, version int)) error {
 	resp, err := metadata.Fetch(addonName)
 	if err != nil {
 		return err
 	}
 
 	addonMetadata := metadata.Decode(resp.Body)
-	err = metadata.Validate(addonMetadata)
+	err = addonMetadata.Validate()
 	if err != nil {
 		return errors.Wrap(err, addonName+" has invalid metadata.")
 	}
 
-	if gLockFile.Versions[addonName] == addonMetadata.Download.Id {
+	if getVersion(addonName) == addonMetadata.Download.Id {
 		return errors.New(addonName + " with version " + strconv.Itoa(addonMetadata.Download.Id) + " is already present in lockfile")
 	}
 
-	resp, err = downloadAddonFromURL(addonMetadata.Download.Url)
+	addonDownload, err := addon.Download(addonMetadata.Download.Url)
 	if err != nil {
 		return err
 	}
 
-	defer resp.Body.Close()
+	zipPath := path.Join(getAddonsPath(), addonMetadata.Download.Name)
 
-	err = writeAddonToFile(resp.Body, addonMetadata.Download.Name)
+	err = addonDownload.ToFile(zipPath)
 	if err != nil {
 		return err
 	}
 
-	fileNames, err := unzip(path.Join(getAddonsPath(), addonMetadata.Download.Name), getAddonsPath())
+	fileNames, err := unzip(zipPath, getAddonsPath())
 	if err != nil {
 		return errors.Wrap(err, "Failed to unzip addon "+addonName)
 	}
@@ -96,38 +96,7 @@ func downloadAddon(addonName string) error {
 
 	fmt.Println("Unzipped", len(fileNames), "files for addon", addonName)
 
-	gLockFile.Versions[addonName] = addonMetadata.Download.Id
-
-	return nil
-}
-
-func downloadAddonFromURL(url string) (*http.Response, error) {
-	resp, err := http.Get(url + "/file")
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != 200 {
-		return nil, errors.New("Status code was not 200 at download URL")
-	}
-
-	return resp, nil
-}
-
-func writeAddonToFile(addon io.Reader, fileName string) error {
-	file, err := os.Create(path.Join(getAddonsPath(), fileName))
-
-	if err != nil {
-		return errors.Wrap(err, "Couldn't create addon zip file")
-	}
-
-	defer file.Close()
-
-	_, err = io.Copy(file, addon)
-
-	if err != nil {
-		return errors.Wrap(err, "Couldn't write to addon zip file")
-	}
+	putVersion(addonName, addonMetadata.Download.Id)
 
 	return nil
 }
@@ -183,38 +152,4 @@ func unzip(src string, dest string) ([]string, error) {
 		}
 	}
 	return filenames, nil
-}
-
-func readLockFile() error {
-	file, err := os.Open("addons.lock.json")
-	if err != nil {
-		return errors.Wrap(err, "Couldn't open lockfile")
-	}
-
-	defer file.Close()
-
-	decoder := json.NewDecoder(file)
-	err = decoder.Decode(&gLockFile)
-	if err != nil {
-		return errors.Wrap(err, "Couldn't decode lockfile")
-	}
-
-	return nil
-}
-
-func writeLockFile() error {
-	file, err := os.Create("addons.lock.json")
-	if err != nil {
-		return errors.Wrap(err, "Couldn't create lockfile")
-	}
-
-	defer file.Close()
-
-	encoder := json.NewEncoder(file)
-	err = encoder.Encode(&gLockFile)
-	if err != nil {
-		return errors.Wrap(err, "Couldn't encode lockfile")
-	}
-
-	return nil
 }
