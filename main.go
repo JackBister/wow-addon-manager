@@ -3,6 +3,7 @@ package main
 import (
 	"archive/zip"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -25,13 +26,21 @@ type AddonsJSON struct {
 var gAddonsJSON AddonsJSON
 
 func main() {
-	lockFile, err := versionfile.FromFile("addons.lock.json")
+	fileName := "addons.json"
+	flag.Parse()
+	if len(flag.Args()) > 0 {
+		fileName = flag.Args()[0]
+	}
+
+	fileNameWithoutExtension := strings.Split(fileName, ".")[0]
+
+	lockFile, err := versionfile.FromFile(fileNameWithoutExtension + ".lock.json")
 	if err != nil {
 		fmt.Println(err.Error())
 		lockFile = versionfile.New()
 	}
 
-	file, err := os.Open("addons.json")
+	file, err := os.Open(fileName)
 	if err != nil {
 		panic(err)
 	}
