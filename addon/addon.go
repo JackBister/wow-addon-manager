@@ -2,8 +2,10 @@ package addon
 
 import (
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/pkg/errors"
 )
@@ -45,7 +47,12 @@ func Download(url string) (*Addon, error) {
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, errors.New("Status code was not 200 at download URL")
+		returnedError := "Status code was not 200 at download URL " + url + ", status code was " + strconv.Itoa(resp.StatusCode)
+		bb, err := ioutil.ReadAll(resp.Body)
+		if err == nil {
+			returnedError += ", body was: " + string(bb)
+		}
+		return nil, errors.New(returnedError)
 	}
 
 	return &Addon{resp}, nil

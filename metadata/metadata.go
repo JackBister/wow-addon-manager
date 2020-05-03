@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -54,6 +55,11 @@ func Decode(r io.Reader) AddonMetaData {
 
 	var metadata AddonMetaData
 	decoder.Decode(&metadata)
+
+	idString := strconv.Itoa(metadata.Download.Id)
+	id1 := idString[:4]
+	id2 := strings.TrimLeft(idString[4:], "0")
+	metadata.Download.Url = "https://media.forgecdn.net/files/" + id1 + "/" + id2 + "/" + metadata.Download.Name
 
 	return metadata
 }
