@@ -41,7 +41,7 @@ func (a *Addon) ToFile(fileName string) error {
 }
 
 func Download(url string) (*Addon, error) {
-	resp, err := http.Get(url + "/file")
+	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
