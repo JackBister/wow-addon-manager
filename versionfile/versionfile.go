@@ -2,31 +2,37 @@ package versionfile
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
-
-	"github.com/pkg/errors"
 )
 
 type VersionFile struct {
-	versions map[string]int
+	versions map[string]map[string]int
 }
 
 func New() *VersionFile {
-	return &VersionFile{versions: make(map[string]int)}
+	return &VersionFile{versions: make(map[string]map[string]int)}
 }
 
-func (v *VersionFile) GetVersion(name string) int {
-	return v.versions[name]
+func (v *VersionFile) GetVersion(prefix string, name string) int {
+	if m, ok := v.versions[prefix]; ok {
+		return m[name]
+	}
+	return 0
 }
 
-func (v *VersionFile) PutVersion(name string, version int) {
-	v.versions[name] = version
+func (v *VersionFile) PutVersion(prefix string, name string, version int) {
+	if _, ok := v.versions[prefix]; !ok {
+		v.versions[prefix] = map[string]int{name: version}
+		return
+	}
+	v.versions[prefix][name] = version
 }
 
 func (v *VersionFile) ToFile(fileName string) error {
 	file, err := os.Create(fileName)
 	if err != nil {
-		return errors.Wrap(err, "Couldn't create lockfile")
+		return fmt.Errorf("couldn't create lockfile: %w", err)
 	}
 
 	defer file.Close()
@@ -34,7 +40,7 @@ func (v *VersionFile) ToFile(fileName string) error {
 	encoder := json.NewEncoder(file)
 	err = encoder.Encode(v)
 	if err != nil {
-		return errors.Wrap(err, "Couldn't encode lockfile")
+		return fmt.Errorf("couldn't encode lockfile: %w", err)
 	}
 
 	return nil
@@ -53,7 +59,7 @@ func (v *VersionFile) UnmarshalJSON(b []byte) error {
 func FromFile(fileName string) (*VersionFile, error) {
 	file, err := os.Open(fileName)
 	if err != nil {
-		return nil, errors.Wrap(err, "Couldn't open lockfile")
+		return nil, fmt.Errorf("couldn't open lockfile: %w", err)
 	}
 	defer file.Close()
 
@@ -61,7 +67,7 @@ func FromFile(fileName string) (*VersionFile, error) {
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&ret)
 	if err != nil {
-		return nil, errors.Wrap(err, "Couldn't decode lockfile")
+		return nil, fmt.Errorf("couldn't decode lockfile: %w", err)
 	}
 
 	return ret, nil

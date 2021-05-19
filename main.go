@@ -9,18 +9,22 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/jackbister/wow-addon-manager/addon"
 	"github.com/jackbister/wow-addon-manager/metadata"
 	"github.com/jackbister/wow-addon-manager/versionfile"
-	"github.com/pkg/errors"
 )
 
+type GameVersionJSON struct {
+	Prefix           string   `json:"prefix"`
+	MajorGameVersion string   `json:"majorGameVersion"`
+	Addons           []string `json:"addons"`
+}
+
 type AddonsJSON struct {
-	Addons    []string `json:"addons"`
-	WowFolder string   `json:"wowFolder"`
+	WowFolder string            `json:"wowFolder"`
+	Versions  []GameVersionJSON `json:"versions"`
 }
 
 var gAddonsJSON AddonsJSON
@@ -52,11 +56,24 @@ func main() {
 		panic(err)
 	}
 
-	for _, v := range gAddonsJSON.Addons {
-		err = downloadAddon(v, lockFile.GetVersion, lockFile.PutVersion)
-		if err != nil {
-			fmt.Println(err.Error())
+	for _, v := range gAddonsJSON.Versions {
+		fmt.Printf("Downloading addons for majorGameVersion=%v, prefix=%v\n", v.MajorGameVersion, v.Prefix)
+		for _, a := range v.Addons {
+			err = downloadAddon(
+				v.Prefix,
+				v.MajorGameVersion,
+				a,
+				func(name string) int {
+					return lockFile.GetVersion(v.Prefix, name)
+				},
+				func(name string, version int) {
+					lockFile.PutVersion(v.Prefix, name, version)
+				})
+			if err != nil {
+				fmt.Println(err.Error())
+			}
 		}
+
 	}
 
 	err = lockFile.ToFile("addons.lock.json")
@@ -65,7 +82,7 @@ func main() {
 	}
 }
 
-func downloadAddon(addonName string, getVersion func(name string) int, putVersion func(name string, version int)) error {
+func downloadAddon(prefix string, majorGameVersion string, addonName string, getVersion func(name string) int, putVersion func(name string, version int)) error {
 	resp, err := metadata.Fetch(addonName)
 	if err != nil {
 		return err
@@ -74,44 +91,52 @@ func downloadAddon(addonName string, getVersion func(name string) int, putVersio
 	addonMetadata := metadata.Decode(resp.Body)
 	err = addonMetadata.Validate()
 	if err != nil {
-		return errors.Wrap(err, addonName+" has invalid metadata.")
+		return fmt.Errorf("%v has invalid metadata: %w", addonName, err)
 	}
 
-	if getVersion(addonName) == addonMetadata.Download.Id {
-		return errors.New(addonName + " with version " + strconv.Itoa(addonMetadata.Download.Id) + " is already present in lockfile")
+	latest, err := addonMetadata.GetLatestFile(majorGameVersion)
+	if err != nil {
+		return fmt.Errorf("failed to get latest version of addon=%v: %w", addonName, err)
+	}
+	fmt.Printf("Latest Id=%v for addon=%v\n", latest.Id, addonName)
+
+	if getVersion(addonName) == latest.Id {
+		return fmt.Errorf("%v with version %v is already present in lockfile", addonName, latest.Id)
 	}
 
-	addonDownload, err := addon.Download(addonMetadata.Download.Url)
+	addonDownload, err := addon.Download(latest.Url)
 	if err != nil {
 		return err
 	}
 
-	zipPath := path.Join(getAddonsPath(), addonMetadata.Download.Name)
+	addonsPath := getAddonsPath(prefix)
+
+	zipPath := path.Join(addonsPath, latest.Name)
 
 	err = addonDownload.ToFile(zipPath)
 	if err != nil {
 		return err
 	}
 
-	fileNames, err := unzip(zipPath, getAddonsPath())
+	fileNames, err := unzip(zipPath, addonsPath)
 	if err != nil {
-		return errors.Wrap(err, "Failed to unzip addon "+addonName)
+		return fmt.Errorf("failed to unzip addon %v: %w", addonName, err)
 	}
 
-	err = os.Remove(path.Join(getAddonsPath(), addonMetadata.Download.Name))
+	err = os.Remove(path.Join(addonsPath, latest.Name))
 	if err != nil {
-		return errors.Wrap(err, "Failed to delete zip file for addon "+addonName)
+		return fmt.Errorf("failed to delete zip file for addon %v: %w", addonName, err)
 	}
 
 	fmt.Println("Unzipped", len(fileNames), "files for addon", addonName)
 
-	putVersion(addonName, addonMetadata.Download.Id)
+	putVersion(addonName, latest.Id)
 
 	return nil
 }
 
-func getAddonsPath() string {
-	return path.Join(gAddonsJSON.WowFolder, "Interface", "AddOns")
+func getAddonsPath(prefix string) string {
+	return path.Join(gAddonsJSON.WowFolder, prefix, "Interface", "AddOns")
 }
 
 func unzip(src string, dest string) ([]string, error) {

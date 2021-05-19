@@ -1,13 +1,13 @@
 package addon
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
-
-	"github.com/pkg/errors"
 )
 
 type Addon struct {
@@ -26,7 +26,7 @@ func (a *Addon) ToFile(fileName string) error {
 	file, err := os.Create(fileName)
 
 	if err != nil {
-		return errors.Wrap(err, "Couldn't create addon zip file")
+		return fmt.Errorf("couldn't create addon zip file: %w", err)
 	}
 
 	defer file.Close()
@@ -34,7 +34,7 @@ func (a *Addon) ToFile(fileName string) error {
 	_, err = io.Copy(file, a)
 
 	if err != nil {
-		return errors.Wrap(err, "Couldn't write to addon zip file")
+		return fmt.Errorf("couldn't write to addon zip file: %w", err)
 	}
 
 	return nil

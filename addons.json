@@ -1,12 +1,28 @@
 {
-    "addons": [
-        "all-the-things",
-        "coordinates",
-        "deadly-boss-mods",
-        "omni-cc",
-        "skada",
-        "tradeskill-master",
-        "weakauras-2"
-    ],
-    "wowFolder": "D:/Games/World of Warcraft"
+  "wowFolder": "C:\\Program Files (x86)\\World of Warcraft",
+  "versions": [
+    {
+      "prefix": "_classic_",
+      "majorGameVersion": "2.5",
+      "addons": [
+        "326516-atlaslootclassic",
+        "414434-attune",
+        "89-auctioneer",
+        "3358-deadly-boss-mods",
+        "334372-questie"
+      ]
+    },
+    {
+      "prefix": "_classic_era_",
+      "majorGameVersion": "1.13",
+      "addons": [
+        "326516-atlaslootclassic",
+        "414434-attune",
+        "89-auctioneer",
+        "3358-deadly-boss-mods",
+        "366310-nova-world-buffs",
+        "334372-questie"
+      ]
+    }
+  ]
 }
