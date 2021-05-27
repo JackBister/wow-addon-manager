@@ -7,9 +7,11 @@
       "addons": [
         "326516-atlaslootclassic",
         "414434-attune",
-        "89-auctioneer",
+        "1592-bagnon",
         "3358-deadly-boss-mods",
-        "334372-questie"
+        "334372-questie",
+        "26886-tradeskill-master",
+        "83317-tradeskillmaster_apphelper"
       ]
     },
     {
@@ -18,10 +20,12 @@
       "addons": [
         "326516-atlaslootclassic",
         "414434-attune",
-        "89-auctioneer",
+        "1592-bagnon",
         "3358-deadly-boss-mods",
         "366310-nova-world-buffs",
-        "334372-questie"
+        "334372-questie",
+        "26886-tradeskill-master",
+        "83317-tradeskillmaster_apphelper"
       ]
     }
   ]
