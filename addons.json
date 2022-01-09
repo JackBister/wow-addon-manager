@@ -11,7 +11,8 @@
         "3358-deadly-boss-mods",
         "334372-questie",
         "26886-tradeskill-master",
-        "83317-tradeskillmaster_apphelper"
+        "83317-tradeskillmaster_apphelper",
+        "534-trinket-menu"
       ]
     },
     {
@@ -25,7 +26,30 @@
         "366310-nova-world-buffs",
         "334372-questie",
         "26886-tradeskill-master",
-        "83317-tradeskillmaster_apphelper"
+        "83317-tradeskillmaster_apphelper",
+        "534-trinket-menu"
+      ]
+    },
+    {
+      "prefix": "_retail_",
+      "majorGameVersion": "9.1",
+      "addons": [
+        "267285-all-the-things",
+        "5547-bad-boy",
+        "1592-bagnon",
+        "3358-deadly-boss-mods",
+        "61284-details",
+        "88009-global-ignore-list",
+        "94855-leatrix-plus",
+        "100547-plater-nameplates",
+        "279257-raiderio",
+        "30801-rarity",
+        "82745-simulationcraft",
+        "18808-tomtom",
+        "26886-tradeskill-master",
+        "83317-tradeskillmaster_apphelper",
+        "489-titan-panel",
+        "65387-weakauras-2"
       ]
     }
   ]
