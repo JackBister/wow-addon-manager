@@ -55,8 +55,8 @@ func (metadata *AddonMetaData) GetLatestFile(majorGameVersion string) (*FileMeta
 }
 
 func (metadata *AddonMetaData) Validate() error {
-	if metadata.Game != "wow" {
-		return fmt.Errorf("the addon is not associated with WoW. metadata=%v", metadata)
+	if metadata.Game != "" && metadata.Game != "wow" {
+		return fmt.Errorf("the addon is not associated with WoW. metadata.Game=%v", metadata.Game)
 	}
 	return nil
 }
