@@ -32,7 +32,7 @@
     },
     {
       "prefix": "_retail_",
-      "majorGameVersion": "9.1",
+      "majorGameVersion": "9.2",
       "addons": [
         "267285-all-the-things",
         "102522-angry-keystones",
@@ -41,6 +41,7 @@
         "3358-deadly-boss-mods",
         "61284-details",
         "14154-handynotes",
+        "96500-handynotes_legiontreasures",
         "413922-handynotes-battle-for-azeroth",
         "363739-handynotes-shadowlands",
         "94855-leatrix-plus",
