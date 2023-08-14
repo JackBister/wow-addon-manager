@@ -62,7 +62,8 @@ func (metadata *AddonMetaData) Validate() error {
 }
 
 func Fetch(addonName string) (*http.Response, error) {
-	resp, err := http.Get("https://api.cfwidget.com/wow/addons/" + addonName)
+	addonId := strings.Split(addonName, "-")[0]
+	resp, err := http.Get("https://api.cfwidget.com/wow/addons/" + addonId)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to download project metadata for addon=%v: %w", addonName, err)
